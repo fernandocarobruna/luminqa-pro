@@ -21,12 +21,15 @@ export default function LoginPage() {
     setMessage("");
 
     if (mode === "password") {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       if (error) {
         setError(error.message);
+      } else if (data.user?.user_metadata?.must_change_password) {
+        router.push("/cambiar-password");
+        router.refresh();
       } else {
         router.push("/");
         router.refresh();

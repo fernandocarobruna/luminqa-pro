@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase";
-import LogoutButton from "./LogoutButton";
+import UserMenu from "./UserMenu";
 import TabLicencias from "./tabs/TabLicencias";
 import TabCargaMasiva from "./tabs/TabCargaMasiva";
 import TabBenchmark from "./tabs/TabBenchmark";
@@ -54,11 +54,8 @@ export default function Dashboard() {
           <div className="sub">Herramienta interna de simulación y pricing</div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          {userEmail && (
-            <span style={{ fontSize: 11, opacity: 0.6 }}>{userEmail}</span>
-          )}
           <span className="badge">v2.0 — 2026</span>
-          <LogoutButton />
+          {userEmail && <UserMenu email={userEmail} />}
         </div>
       </header>
 
@@ -67,7 +64,7 @@ export default function Dashboard() {
           {tabs.map((tab, i) => (
             <button
               key={tab.name}
-              className={`tab ${i === activeTab ? "active" : ""}`}
+              className={"tab" + (i === activeTab ? " active" : "")}
               onClick={() => setActiveTab(i)}
               style={
                 tab.name === "Administrador"

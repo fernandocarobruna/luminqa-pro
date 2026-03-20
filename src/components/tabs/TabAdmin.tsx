@@ -5,13 +5,24 @@ import { useState, useEffect, useCallback } from "react";
 interface User {
   id: string;
   email: string;
+  role: string;
+  status: string;
   created_at: string;
   last_sign_in_at: string | null;
-  banned: boolean;
+}
+
+interface Notification {
+  id: string;
+  type: string;
+  user_email: string;
+  message: string;
+  read: boolean;
+  created_at: string;
 }
 
 export default function TabAdmin() {
   const [users, setUsers] = useState<User[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -27,30 +38,32 @@ export default function TabAdmin() {
     setLoading(false);
   }, []);
 
+  const fetchNotifications = useCallback(async () => {
+    const res = await fetch("/api/admin/notifications");
+    const data = await res.json();
+    if (data.notifications) setNotifications(data.notifications);
+  }, []);
+
   useEffect(() => {
     fetchUsers();
-  }, [fetchUsers]);
+    fetchNotifications();
+  }, [fetchUsers, fetchNotifications]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     setCreating(true);
     setError("");
     setMessage("");
-
     const res = await fetch("/api/admin/users", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: newEmail, password: newPassword }),
     });
     const data = await res.json();
-
-    if (data.error) {
-      setError(data.error);
-    } else {
-      setMessage(`Partner ${newEmail} creado exitosamente`);
-      setNewEmail("");
-      setNewPassword("");
-      fetchUsers();
+    if (data.error) { setError(data.error); }
+    else {
+      setMessage("Partner " + newEmail + " creado. Debe cambiar su contraseña en el primer login.");
+      setNewEmail(""); setNewPassword(""); fetchUsers();
     }
     setCreating(false);
   }
@@ -61,27 +74,55 @@ export default function TabAdmin() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId, action }),
     });
-    fetchUsers();
+    fetchUsers(); fetchNotifications();
+  }
+
+  async function markAllRead() {
+    await fetch("/api/admin/notifications", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: "all" }),
+    });
+    fetchNotifications();
   }
 
   function formatDate(d: string | null) {
-    if (!d) return "Nunca";
-    return new Date(d).toLocaleDateString("es-CL", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    if (!d) return "\u2014";
+    return new Date(d).toLocaleDateString("es-CL", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
   }
+
+  const statusTag = (s: string) => {
+    if (s === "activo") return <span className="tag tag-green">Activo</span>;
+    if (s === "creado") return <span className="tag tag-amber">Creado</span>;
+    return <span className="tag tag-red">Eliminado</span>;
+  };
+
+  const roleTag = (r: string) => {
+    if (r === "admin") return <span className="tag tag-purple">Admin</span>;
+    return <span className="tag tag-blue">Partner</span>;
+  };
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
     <div>
       <div className="section-title">Administrador de Partners</div>
-      <div className="section-sub">
-        Gestiona las cuentas de acceso al portal. Solo visible para
-        administradores.
-      </div>
+      <div className="section-sub">Gestiona las cuentas de acceso al portal. Solo visible para administradores.</div>
+
+      {unreadCount > 0 && (
+        <div className="card" style={{ marginBottom: 16, borderLeft: "3px solid var(--accent)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <h3 style={{ margin: 0 }}>Notificaciones <span style={{ background: "var(--danger)", color: "#fff", borderRadius: 10, padding: "2px 8px", fontSize: 11, marginLeft: 8 }}>{unreadCount}</span></h3>
+            <button onClick={markAllRead} style={{ fontSize: 12, color: "var(--accent)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>Marcar todas como leídas</button>
+          </div>
+          {notifications.filter((n) => !n.read).slice(0, 5).map((n) => (
+            <div key={n.id} style={{ padding: "8px 12px", background: "var(--accentLight)", borderRadius: 6, fontSize: 13, marginBottom: 4, display: "flex", justifyContent: "space-between" }}>
+              <span>{n.message}</span>
+              <span style={{ fontSize: 11, color: "var(--muted)" }}>{formatDate(n.created_at)}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="grid g2" style={{ marginBottom: 20 }}>
         <div className="card">
@@ -89,128 +130,33 @@ export default function TabAdmin() {
           <form onSubmit={handleCreate}>
             <div className="slider-row">
               <label style={{ minWidth: 80 }}>Email</label>
-              <input
-                type="email"
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                required
-                placeholder="partner@empresa.com"
-                style={{
-                  flex: 1,
-                  padding: "8px 12px",
-                  border: "1px solid var(--border)",
-                  borderRadius: 6,
-                  fontSize: 13,
-                }}
-              />
+              <input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} required placeholder="partner@empresa.com" style={{ flex: 1, padding: "8px 12px", border: "1px solid var(--border)", borderRadius: 6, fontSize: 13 }} />
             </div>
             <div className="slider-row">
               <label style={{ minWidth: 80 }}>Password</label>
-              <input
-                type="text"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-                placeholder="Contraseña inicial"
-                style={{
-                  flex: 1,
-                  padding: "8px 12px",
-                  border: "1px solid var(--border)",
-                  borderRadius: 6,
-                  fontSize: 13,
-                }}
-              />
+              <input type="text" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required minLength={8} placeholder="Mínimo 8 caracteres (temporal)" style={{ flex: 1, padding: "8px 12px", border: "1px solid var(--border)", borderRadius: 6, fontSize: 13 }} />
             </div>
-            {error && (
-              <div
-                style={{
-                  background: "#fee2e2",
-                  color: "#991b1b",
-                  padding: "8px 12px",
-                  borderRadius: 6,
-                  fontSize: 12,
-                  marginBottom: 10,
-                }}
-              >
-                {error}
-              </div>
-            )}
-            {message && (
-              <div
-                style={{
-                  background: "#d1fae5",
-                  color: "#065f46",
-                  padding: "8px 12px",
-                  borderRadius: 6,
-                  fontSize: 12,
-                  marginBottom: 10,
-                }}
-              >
-                {message}
-              </div>
-            )}
-            <button
-              type="submit"
-              disabled={creating}
-              style={{
-                padding: "10px 20px",
-                background: creating ? "var(--muted)" : "var(--accent)",
-                color: "#fff",
-                border: "none",
-                borderRadius: 8,
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: creating ? "not-allowed" : "pointer",
-              }}
-            >
-              {creating ? "Creando..." : "Crear partner"}
-            </button>
+            {error && (<div style={{ background: "#fee2e2", color: "#991b1b", padding: "8px 12px", borderRadius: 6, fontSize: 12, marginBottom: 10 }}>{error}</div>)}
+            {message && (<div style={{ background: "#d1fae5", color: "#065f46", padding: "8px 12px", borderRadius: 6, fontSize: 12, marginBottom: 10 }}>{message}</div>)}
+            <button type="submit" disabled={creating} style={{ padding: "10px 20px", background: creating ? "var(--muted)" : "var(--accent)", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: creating ? "not-allowed" : "pointer" }}>{creating ? "Creando..." : "Crear partner"}</button>
           </form>
+          <div className="note" style={{ marginTop: 12 }}>El partner deberá cambiar su contraseña en el primer inicio de sesión.</div>
         </div>
 
         <div className="card">
           <h3>Resumen</h3>
           <div className="grid g3">
-            <div
-              style={{
-                background: "var(--accentLight)",
-                borderRadius: 8,
-                padding: 16,
-                textAlign: "center",
-              }}
-            >
-              <div style={{ fontSize: 28, fontWeight: 700, color: "var(--navy)" }}>
-                {users.length}
-              </div>
-              <div style={{ fontSize: 12, color: "var(--accent2)" }}>
-                Total partners
-              </div>
+            <div style={{ background: "var(--accentLight)", borderRadius: 8, padding: 16, textAlign: "center" }}>
+              <div style={{ fontSize: 28, fontWeight: 700, color: "var(--navy)" }}>{users.length}</div>
+              <div style={{ fontSize: 12, color: "var(--accent2)" }}>Total</div>
             </div>
-            <div
-              style={{
-                background: "#d1fae5",
-                borderRadius: 8,
-                padding: 16,
-                textAlign: "center",
-              }}
-            >
-              <div style={{ fontSize: 28, fontWeight: 700, color: "#065f46" }}>
-                {users.filter((u) => !u.banned).length}
-              </div>
+            <div style={{ background: "#d1fae5", borderRadius: 8, padding: 16, textAlign: "center" }}>
+              <div style={{ fontSize: 28, fontWeight: 700, color: "#065f46" }}>{users.filter((u) => u.status === "activo").length}</div>
               <div style={{ fontSize: 12, color: "#065f46" }}>Activos</div>
             </div>
-            <div
-              style={{
-                background: "#fee2e2",
-                borderRadius: 8,
-                padding: 16,
-                textAlign: "center",
-              }}
-            >
-              <div style={{ fontSize: 28, fontWeight: 700, color: "#991b1b" }}>
-                {users.filter((u) => u.banned).length}
-              </div>
-              <div style={{ fontSize: 12, color: "#991b1b" }}>Suspendidos</div>
+            <div style={{ background: "#fef3c7", borderRadius: 8, padding: 16, textAlign: "center" }}>
+              <div style={{ fontSize: 28, fontWeight: 700, color: "#92400e" }}>{users.filter((u) => u.status === "creado").length}</div>
+              <div style={{ fontSize: 12, color: "#92400e" }}>Pendientes</div>
             </div>
           </div>
         </div>
@@ -218,86 +164,25 @@ export default function TabAdmin() {
 
       <div className="card">
         <h3>Partners registrados</h3>
-        {loading ? (
-          <p style={{ fontSize: 13, color: "var(--muted)" }}>Cargando...</p>
-        ) : (
+        {loading ? (<p style={{ fontSize: 13, color: "var(--muted)" }}>Cargando...</p>) : (
           <table>
-            <thead>
-              <tr>
-                <th>Email</th>
-                <th>Creado</th>
-                <th>Último login</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
+            <thead><tr><th>Email</th><th>Tipo</th><th>Estado</th><th>Creado</th><th>Último login</th><th>Acciones</th></tr></thead>
             <tbody>
               {users.map((u) => (
                 <tr key={u.id}>
-                  <td>
-                    <b>{u.email}</b>
-                  </td>
+                  <td><b>{u.email}</b></td>
+                  <td>{roleTag(u.role)}</td>
+                  <td>{statusTag(u.status)}</td>
                   <td>{formatDate(u.created_at)}</td>
                   <td>{formatDate(u.last_sign_in_at)}</td>
                   <td>
-                    {u.banned ? (
-                      <span className="tag tag-red">Suspendido</span>
-                    ) : (
-                      <span className="tag tag-green">Activo</span>
-                    )}
-                  </td>
-                  <td>
-                    {u.banned ? (
-                      <button
-                        onClick={() => handleAction(u.id, "unban")}
-                        style={{
-                          padding: "4px 10px",
-                          background: "var(--success)",
-                          color: "#fff",
-                          border: "none",
-                          borderRadius: 4,
-                          fontSize: 11,
-                          cursor: "pointer",
-                          marginRight: 6,
-                        }}
-                      >
-                        Reactivar
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleAction(u.id, "ban")}
-                        style={{
-                          padding: "4px 10px",
-                          background: "var(--warn)",
-                          color: "#fff",
-                          border: "none",
-                          borderRadius: 4,
-                          fontSize: 11,
-                          cursor: "pointer",
-                          marginRight: 6,
-                        }}
-                      >
-                        Suspender
-                      </button>
-                    )}
-                    <button
-                      onClick={() => {
-                        if (confirm(`¿Eliminar ${u.email}? Esta acción es irreversible.`)) {
-                          handleAction(u.id, "delete");
-                        }
-                      }}
-                      style={{
-                        padding: "4px 10px",
-                        background: "var(--danger)",
-                        color: "#fff",
-                        border: "none",
-                        borderRadius: 4,
-                        fontSize: 11,
-                        cursor: "pointer",
-                      }}
-                    >
-                      Eliminar
-                    </button>
+                    {u.role !== "admin" && (<>
+                      {u.status === "eliminado" ? (
+                        <button onClick={() => handleAction(u.id, "reactivate")} style={{ padding: "4px 10px", background: "var(--success)", color: "#fff", border: "none", borderRadius: 4, fontSize: 11, cursor: "pointer" }}>Reactivar</button>
+                      ) : (
+                        <button onClick={() => { if (confirm("¿Eliminar cuenta de " + u.email + "?")) handleAction(u.id, "delete"); }} style={{ padding: "4px 10px", background: "var(--danger)", color: "#fff", border: "none", borderRadius: 4, fontSize: 11, cursor: "pointer" }}>Eliminar</button>
+                      )}
+                    </>)}
                   </td>
                 </tr>
               ))}
