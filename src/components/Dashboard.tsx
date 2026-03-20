@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import LogoutButton from "./LogoutButton";
 import TabLicencias from "./tabs/TabLicencias";
 import TabCargaMasiva from "./tabs/TabCargaMasiva";
 import TabBenchmark from "./tabs/TabBenchmark";
@@ -40,7 +41,10 @@ export default function Dashboard() {
           <h1>LuminQA — Guía Comercial para Partners</h1>
           <div className="sub">Herramienta interna de simulación y pricing</div>
         </div>
-        <span className="badge">v2.0 — 2026</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <span className="badge">v2.0 — 2026</span>
+          <LogoutButton />
+        </div>
       </header>
 
       <div className="container">
