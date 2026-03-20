@@ -21,10 +21,12 @@ const BASE_TABS = [
   { name: "ROI cliente", component: TabROI },
   { name: "Modelos de venta", component: TabModelos },
   { name: "Competencia LATAM", component: TabCompetencia },
-  { name: "Proyección", component: TabProyeccion },
 ];
 
-const ADMIN_TAB = { name: "Administrador", component: TabAdmin };
+const ADMIN_TABS = [
+  { name: "Proyección", component: TabProyeccion },
+  { name: "Administrador", component: TabAdmin },
+];
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState(0);
@@ -41,7 +43,7 @@ export default function Dashboard() {
     });
   }, []);
 
-  const tabs = isAdmin ? [...BASE_TABS, ADMIN_TAB] : BASE_TABS;
+  const tabs = isAdmin ? [...BASE_TABS, ...ADMIN_TABS] : BASE_TABS;
   const ActiveComponent = tabs[activeTab]?.component ?? TabLicencias;
 
   return (

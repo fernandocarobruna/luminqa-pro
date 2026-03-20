@@ -253,7 +253,7 @@ export default function TabLicencias() {
         </div>
 
         <div className="card">
-          <h3>Paquetes de recarga de créditos</h3>
+          <h3>Recarga de créditos</h3>
           <p
             style={{
               fontSize: 12,
@@ -261,43 +261,39 @@ export default function TabLicencias() {
               marginBottom: 12,
             }}
           >
-            Si en algún mes se necesitan créditos adicionales a los incluidos en
-            la licencia:
+            Una vez agotados los créditos incluidos en la licencia, se pueden
+            adquirir paquetes adicionales de 100 créditos al mismo valor por
+            crédito del plan contratado:
           </p>
           <table>
             <thead>
               <tr>
-                <th>Paquete</th>
-                <th>Precio</th>
+                <th>Plan contratado</th>
                 <th>Precio/crédito</th>
+                <th>Paquete de 100</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td>
-                  <b>100 créditos</b>
-                </td>
-                <td>$999</td>
+                <td><b>Starter</b> (1-5 lic.)</td>
                 <td>$9.99</td>
+                <td>$999</td>
+              </tr>
+              <tr className="hl">
+                <td><b>Professional</b> (6-14 lic.)</td>
+                <td>$8.33</td>
+                <td>$833</td>
               </tr>
               <tr>
-                <td>
-                  <b>250 créditos</b>
-                </td>
-                <td>$2,199</td>
-                <td>$8.80</td>
-              </tr>
-              <tr>
-                <td>
-                  <b>500 créditos</b>
-                </td>
-                <td>$3,999</td>
-                <td>$8.00</td>
+                <td><b>Enterprise</b> (15+ lic.)</td>
+                <td>$7.14</td>
+                <td>$714</td>
               </tr>
             </tbody>
           </table>
           <div className="note">
-            Los créditos de recarga se suman a los incluidos en la licencia. No
+            El valor por crédito de recarga es idéntico al de tu plan. Los
+            créditos adicionales se suman a los incluidos en la licencia y no
             tienen vencimiento mientras la licencia esté activa.
           </div>
         </div>
