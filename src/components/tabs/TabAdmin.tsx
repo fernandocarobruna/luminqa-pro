@@ -29,6 +29,18 @@ export default function TabAdmin() {
   const [creating, setCreating] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [useGenerator, setUseGenerator] = useState(true);
+
+  function generatePassword() {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%";
+    let pass = "";
+    for (let i = 0; i < 14; i++) pass += chars[Math.floor(Math.random() * chars.length)];
+    return pass;
+  }
+
+  function handleGenerate() {
+    setNewPassword(generatePassword());
+  }
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -62,7 +74,7 @@ export default function TabAdmin() {
     const data = await res.json();
     if (data.error) { setError(data.error); }
     else {
-      setMessage("Partner " + newEmail + " creado. Debe cambiar su contraseña en el primer login.");
+      setMessage("Partner " + newEmail + " creado. Se envió un email con las credenciales e instrucciones.");
       setNewEmail(""); setNewPassword(""); fetchUsers();
     }
     setCreating(false);
@@ -132,9 +144,22 @@ export default function TabAdmin() {
               <label style={{ minWidth: 80 }}>Email</label>
               <input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} required placeholder="partner@empresa.com" style={{ flex: 1, padding: "8px 12px", border: "1px solid var(--border)", borderRadius: 6, fontSize: 13 }} />
             </div>
-            <div className="slider-row">
-              <label style={{ minWidth: 80 }}>Password</label>
-              <input type="text" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required minLength={8} placeholder="Mínimo 8 caracteres (temporal)" style={{ flex: 1, padding: "8px 12px", border: "1px solid var(--border)", borderRadius: 6, fontSize: 13 }} />
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+                <button type="button" onClick={() => { setUseGenerator(true); handleGenerate(); }} style={{ padding: "6px 12px", background: useGenerator ? "var(--accent)" : "var(--bg)", color: useGenerator ? "#fff" : "var(--muted)", border: "1px solid var(--border)", borderRadius: 6, fontSize: 12, cursor: "pointer" }}>Generar segura</button>
+                <button type="button" onClick={() => { setUseGenerator(false); setNewPassword(""); }} style={{ padding: "6px 12px", background: !useGenerator ? "var(--accent)" : "var(--bg)", color: !useGenerator ? "#fff" : "var(--muted)", border: "1px solid var(--border)", borderRadius: 6, fontSize: 12, cursor: "pointer" }}>Manual</button>
+              </div>
+              <div className="slider-row">
+                <label style={{ minWidth: 80 }}>Password</label>
+                {useGenerator ? (
+                  <div style={{ flex: 1, display: "flex", gap: 6 }}>
+                    <input type="text" value={newPassword} readOnly style={{ flex: 1, padding: "8px 12px", border: "1px solid var(--border)", borderRadius: 6, fontSize: 13, fontFamily: "monospace", background: "var(--accentLight)" }} />
+                    <button type="button" onClick={handleGenerate} style={{ padding: "8px 12px", background: "var(--navy)", color: "#fff", border: "none", borderRadius: 6, fontSize: 11, cursor: "pointer", whiteSpace: "nowrap" }}>Otra</button>
+                  </div>
+                ) : (
+                  <input type="text" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required minLength={8} placeholder="Mínimo 8 caracteres" style={{ flex: 1, padding: "8px 12px", border: "1px solid var(--border)", borderRadius: 6, fontSize: 13 }} />
+                )}
+              </div>
             </div>
             {error && (<div style={{ background: "#fee2e2", color: "#991b1b", padding: "8px 12px", borderRadius: 6, fontSize: 12, marginBottom: 10 }}>{error}</div>)}
             {message && (<div style={{ background: "#d1fae5", color: "#065f46", padding: "8px 12px", borderRadius: 6, fontSize: 12, marginBottom: 10 }}>{message}</div>)}

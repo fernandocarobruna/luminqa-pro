@@ -1,6 +1,7 @@
 import { createAdminClient, isAdminEmail } from "@/lib/supabase-admin";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { NextResponse } from "next/server";
+import { sendWelcomeEmail } from "@/lib/email";
 
 async function verifyAdmin() {
   const supabase = await createServerSupabaseClient();
@@ -66,8 +67,17 @@ export async function POST(request: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
+  // Send welcome email with credentials
+  try {
+    await sendWelcomeEmail({ to: email, password });
+  } catch (emailError) {
+    console.error("Failed to send welcome email:", emailError);
+    // Don't fail the user creation if email fails
+  }
+
   return NextResponse.json({
     user: { id: data.user.id, email: data.user.email, created_at: data.user.created_at },
+    emailSent: true,
   });
 }
 
