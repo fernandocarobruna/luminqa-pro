@@ -18,7 +18,7 @@ const BASE_TABS = [
   { name: "Licencias", component: TabLicencias },
   { name: "Carga masiva", component: TabCargaMasiva },
   { name: "Benchmark", component: TabBenchmark },
-  { name: "ROI cliente", component: TabROI },
+  { name: "Ahorro e Impacto", component: TabROI },
   { name: "Modelos de venta", component: TabModelos },
   { name: "Competencia LATAM", component: TabCompetencia },
 ];
